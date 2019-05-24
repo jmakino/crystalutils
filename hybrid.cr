@@ -114,7 +114,7 @@ n.times{|i|
   elsif type==2
     x,v = hybrid1(x,v,dtreal,->acc(Vector), ->k2(Float64),
                  ->leapfrog_1step(Vector, Vector, Float64,                                                 Proc(Vector,Vector)));
-  elsif type==2
+  elsif type==3
     x,v = hybrid1(x,v,dtreal,->acc(Vector), ->k1(Float64),
                  ->leapfrog_1step(Vector, Vector, Float64,                                                 Proc(Vector,Vector)));
   else
