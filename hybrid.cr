@@ -19,9 +19,6 @@ def k2(r)
 end
 
 def k1(r)
-  # k2 (r)=0 if r < 0.75
-  #    0-1 for r=0.75 -1.25
-  # 1 for r > 1.25
   x = (r-1.0)*2+0.5
   f=1.0
   if x < 0 
@@ -33,9 +30,6 @@ def k1(r)
 end
 
 def k0(r)
-  # k2 (r)=0 if r < 0.75
-  #    0-1 for r=0.75 -1.25
-  # 1 for r > 1.25
   x = (r-1.0)*2+0.5
   f=1.0
   if x < 0 
@@ -104,22 +98,22 @@ e00= e(x,v)
 STDERR.print "ecc=#{e0}, etot0 =#{e00}, dt=#{dt}, tend=#{tend} type={#type}\n"
 ninter = (1.0/dt+0.5).to_i/100
 ninter = 1 if ninter == 0
-    printf("%25.20e %25.20e %25.20e %25.20e %25.20e %25.20e %d\n", 0,
-           x[0],x[1], v[0],v[1], 0,0)
+printf("%25.20e %25.20e %25.20e %25.20e %25.20e %25.20e %d\n", 0,
+       x[0],x[1], v[0],v[1], 0,0);
+kfunc=->k2(Float64)
+ifunc= ->leapfrog_1step(Vector, Vector, Float64, Proc(Vector,Vector))
+if type > 1
+  kfunc=[->k2(Float64),->k1(Float64),->k0(Float64)][(type-2)%3]
+  ifunc = ->yoshida4(Vector, Vector, Float64, Proc(Vector,Vector)) if type>4
+end
+
 n.times{|i|
   if type==0	
     x,v = leapfrog_1step(x,v,dtreal,->acc(Vector))
   elsif type==1
     x,v = yoshida4(x,v,dtreal,->acc(Vector))
-  elsif type==2
-    x,v = hybrid1(x,v,dtreal,->acc(Vector), ->k2(Float64),
-                 ->leapfrog_1step(Vector, Vector, Float64,                                                 Proc(Vector,Vector)));
-  elsif type==3
-    x,v = hybrid1(x,v,dtreal,->acc(Vector), ->k1(Float64),
-                 ->leapfrog_1step(Vector, Vector, Float64,                                                 Proc(Vector,Vector)));
   else
-    x,v = hybrid1(x,v,dtreal,->acc(Vector), ->k0(Float64),
-                 ->leapfrog_1step(Vector, Vector, Float64,                                                 Proc(Vector,Vector)));
+    x,v = hybrid1(x,v,dtreal,->acc(Vector), kfunc, ifunc)
   end
   if (i+1)%ninter == 0
     printf("%25.20e %25.20e %25.20e %25.20e %25.20e %25.20e %d\n", (i+1)*dtreal,
