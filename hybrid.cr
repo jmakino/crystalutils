@@ -1,5 +1,5 @@
 #
-# hybridr.rb
+# hybridr.cr
 #
 require "./vector3.cr"
 include Math
@@ -18,8 +18,32 @@ def k2(r)
   f
 end
 
-def k20(r)
-  1.0
+def k1(r)
+  # k2 (r)=0 if r < 0.75
+  #    0-1 for r=0.75 -1.25
+  # 1 for r > 1.25
+  x = (r-1.0)*2+0.5
+  f=1.0
+  if x < 0 
+    f=0.0
+  elsif x < 1
+    f =  x*x/(1.0 - 2.0*x + 2.0*x*x)
+  end
+  f
+end
+
+def k0(r)
+  # k2 (r)=0 if r < 0.75
+  #    0-1 for r=0.75 -1.25
+  # 1 for r > 1.25
+  x = (r-1.0)*2+0.5
+  f=1.0
+  if x < 0 
+    f=0.0
+  elsif x < 1
+    f =  x
+  end
+  f
 end
 
 def pot(x)
@@ -29,48 +53,33 @@ def acc(x)
   r= sqrt(x*x)
   -x/(r*r*r)
 end
-def leapfrog_1step(x,v,dt)
-  a = acc(x)
+
+def leapfrog_1step(x,v,dt,afunc)
+  a = afunc.call(x)
   x = x+ dt*v+dt*dt*a*0.5
-  newa=acc(x)
+  newa=afunc.call(x)
   v = v+ dt*(a+newa)*0.5
   [x,v]
 end
-def leapfrog_1step_h2(x,v,dt)
-  a = acc(x)*(1.0-k2(sqrt(x*x)))
-  x = x+ dt*v+dt*dt*a*0.5
-  newa=acc(x)*(1.0-k2(sqrt(x*x)))
-  v = v+ dt*(a+newa)*0.5
-  [x,v]
-end
-def yoshida4(x,v,dt)
-     
+
+def yoshida4(x,v,dt,afunc)
   d1 = 1/(2-exp(log(2)/3))
   d2 = 1-2*d1
-  x,v=leapfrog_1step(x,v,dt*d1)
-  x,v=leapfrog_1step(x,v,dt*d2)
-  x,v=leapfrog_1step(x,v,dt*d1)
+  x,v=leapfrog_1step(x,v,dt*d1,afunc)
+  x,v=leapfrog_1step(x,v,dt*d2,afunc)
+  x,v=leapfrog_1step(x,v,dt*d1,afunc)
   [x,v]
 end
 
-def yoshida4_h2(x,v,dt)
-     
-  d1 = 1/(2-exp(log(2)/3))
-  d2 = 1-2*d1
-  x,v=leapfrog_1step_h2(x,v,dt*d1)
-  x,v=leapfrog_1step_h2(x,v,dt*d2)
-  x,v=leapfrog_1step_h2(x,v,dt*d1)
-  [x,v]
-end
-
-def hybrid1(x,v,dt)
-  ah1 = acc(x)*k2(sqrt(x*x))
+def hybrid1(x,v,dt, accfunc, kfunc,integrator)
+  along = -> (x : Vector){accfunc.call(x)*kfunc.call(sqrt(x*x))}
+  ashort = -> (x : Vector){accfunc.call(x)*(1.0-kfunc.call(sqrt(x*x)))}
+  ah1 = along.call(x)
   v = v+dt*0.5*ah1
   nsteps = 128
   dt2 = dt/nsteps
-  nsteps.times{x,v=leapfrog_1step_h2(x,v,dt2)}
-#  nsteps.times{x,v=yoshida4_h2(x,v,dt2)}
-  ah1 = acc(x)*k2(sqrt(x*x))
+  nsteps.times{x,v=integrator.call(x,v,dt2,ashort)}
+  ah1 = along.call(x)
   v = v+dt*0.5*ah1
   [x,v]
 end
@@ -78,6 +87,7 @@ end
 def e(x,v)
   pot(x)+v*v*0.5
 end
+
 e0=ARGV[0].to_f
 dt=ARGV[1].to_f
 tend=ARGV[2].to_f
@@ -98,11 +108,18 @@ ninter = 1 if ninter == 0
            x[0],x[1], v[0],v[1], 0,0)
 n.times{|i|
   if type==0	
-    x,v = leapfrog_1step(x,v,dtreal)
+    x,v = leapfrog_1step(x,v,dtreal,->acc(Vector))
   elsif type==1
-    x,v = yoshida4(x,v,dtreal)
+    x,v = yoshida4(x,v,dtreal,->acc(Vector))
+  elsif type==2
+    x,v = hybrid1(x,v,dtreal,->acc(Vector), ->k2(Float64),
+                 ->leapfrog_1step(Vector, Vector, Float64,                                                 Proc(Vector,Vector)));
+  elsif type==2
+    x,v = hybrid1(x,v,dtreal,->acc(Vector), ->k1(Float64),
+                 ->leapfrog_1step(Vector, Vector, Float64,                                                 Proc(Vector,Vector)));
   else
-    x,v = hybrid1(x,v,dtreal)
+    x,v = hybrid1(x,v,dtreal,->acc(Vector), ->k0(Float64),
+                 ->leapfrog_1step(Vector, Vector, Float64,                                                 Proc(Vector,Vector)));
   end
   if (i+1)%ninter == 0
     printf("%25.20e %25.20e %25.20e %25.20e %25.20e %25.20e %d\n", (i+1)*dtreal,
