@@ -100,11 +100,20 @@ ninter = (1.0/dt+0.5).to_i/100
 ninter = 1 if ninter == 0
 printf("%25.20e %25.20e %25.20e %25.20e %25.20e %25.20e %d\n", 0,
        x[0],x[1], v[0],v[1], 0,0);
-kfunc=->k2(Float64)
-ifunc= ->leapfrog_1step(Vector, Vector, Float64, Proc(Vector,Vector))
+
+macro to_f64f(name)
+  -> {{name.id}}(Float64)
+end
+macro to_integf(name)
+  -> {{name.id}}(Vector, Vector, Float64, Proc(Vector,Vector))
+end
+
+kfunc= to_f64f(:k2)
+ifunc= to_integf(:leapfrog_1step)
+
 if type > 1
-  kfunc=[->k2(Float64),->k1(Float64),->k0(Float64)][(type-2)%3]
-  ifunc = ->yoshida4(Vector, Vector, Float64, Proc(Vector,Vector)) if type>4
+  kfunc=[to_f64f(:k2),to_f64f(:k1), to_f64f(:k0)][(type-2)%3]
+  ifunc = to_integf(:yoshida4) if type>4
 end
 
 n.times{|i|
