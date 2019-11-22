@@ -86,7 +86,9 @@ e0=ARGV[0].to_f
 dt=ARGV[1].to_f
 tend=ARGV[2].to_f
 type=ARGV[3].to_i
-dtreal=dt*(Math::PI*2)
+ttype=ARGV[4].to_i
+dtreal=dt
+dtreal=dt*(Math::PI*2) if (ttype==1)
 n = ((tend+0.5*dt)/dt).to_i
 x0= 1+e0
 #k + u = - 0.5
@@ -96,7 +98,7 @@ v=[0.0,v0,0.0].to_v
 x=[x0,0.0,0.0].to_v
 e00= e(x,v)
 STDERR.print "ecc=#{e0}, etot0 =#{e00}, dt=#{dt}, tend=#{tend} type={#type}\n"
-ninter = (1.0/dt+0.5).to_i/100
+ninter = (1.0/dt+0.5).to_i//100
 ninter = 1 if ninter == 0
 printf("%25.20e %25.20e %25.20e %25.20e %25.20e %25.20e %d\n", 0,
        x[0],x[1], v[0],v[1], 0,0);

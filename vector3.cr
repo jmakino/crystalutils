@@ -10,6 +10,11 @@ struct Vector
     @y=x
     @z=x
   end
+  def initialize(x : Float64)
+    @x=x
+    @y=x
+    @z=x
+  end
   def initialize
     @x=0.0
     @y=0.0
