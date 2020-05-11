@@ -38,6 +38,9 @@ struct Vector
     # inner product
     @x*a.x+ @y*a.y+ @z*a.z
   end
+  def sqr
+    self*self
+  end
   def *(a : Float)
     Vector.new(@x*a, @y*a, @z*a)
   end

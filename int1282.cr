@@ -1,4 +1,4 @@
-  @[Link(ldflags: "-L/home/makino/src/crystalutils -lmulcint128")]
+  @[Link(ldflags: "#{__DIR__}/mulcint128.o")]
   lib Libmulcint128
     fun mulCint128(x: Int128, y: Int128) : Int128
   end

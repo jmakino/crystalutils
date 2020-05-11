@@ -10,10 +10,11 @@ class MyVector(T) < Array(T)
     diff
   end
   def -
-    self.map{|x| -x}.to_v
+      self.map{|x| -x}.to_v
   end
+  
   def +
-    self
+      self
   end
   def *(a)
     if a.class == MyVector(T)              # inner product
