@@ -75,7 +75,8 @@ optionstr= <<-END
 
 END
 
-clop_init(__LINE__, __FILE__, __DIR__, "optionstr")
+clop_init_localtest(__LINE__, __FILE__, __DIR__, "optionstr")
+
 # {{system("head  -#{__LINE__ -1} #{__FILE__}>  #{__DIR__}/.tmp.cr")}}
 #data = YAML.parse(add_option_tag(optionstr))
                   

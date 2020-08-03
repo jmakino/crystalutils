@@ -8,11 +8,21 @@
 
 require "yaml"
 
-macro clop_init(l, f, d, strname)
-{{system("head  -#{l-1} #{f}>  #{d}/.tmp.cr")}}
-{{system("echo CLOPPARSER.parse\\(#{strname}\\) >>  #{d}/.tmp.cr")}}
-{{system("crystal   #{d}/.tmp.cr")}}
+macro clop_init_old(l, f, d, strname)
+     {{system("head  -#{l-1} #{f}>  #{d}/.tmp.cr")}}
+     {{system("echo CLOPPARSER.parse\\(#{strname}\\) >>  #{d}/.tmp.cr")}}
+     {{system("crystal   #{d}/.tmp.cr")}}
+end
 
+macro clop_init_localtest0(l, f, d, strname)
+     {{run("./clop_process", l, f, d, strname)}}
+end
+macro clop_init_localtest(l, f, d, strname)
+     {{system("sh ./clop_process.sh #{l} #{f} #{d} #{strname}")}}
+end
+
+macro clop_init(l, f, d, strname)
+     {{system("sh ./lib/clop/src/clop_process.sh #{l} #{f} #{d} #{strname}")}}
 end
 
 class CLOPPARSER
@@ -21,11 +31,21 @@ class CLOPPARSER
     sprintf("Option%03d", i)
   end
   def self.add_option_tag(s)
+    sh = s + <<-EOF
+  Short name:		-h
+  Long name:  		--help
+  Value type:  		bool
+  Variable name:	help
+  Description:		Print help
+  Long description:
+    Print long help
+EOF
+
     ss=""
     i=0
     inoptions=false
     previous_line_was_newoption = false
-    s.each_line{|x|
+    sh.each_line{|x|
       if /^(\s)*(Short name|Long name):/ =~ x
         inoptions=true
         unless  previous_line_was_newoption
